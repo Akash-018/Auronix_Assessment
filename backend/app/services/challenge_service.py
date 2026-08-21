@@ -2,7 +2,7 @@ import io
 from PIL import Image
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, UploadFile
-from app.models import Challenge, ChallengeStatus, User
+from app.models import Challenge, ChallengeStatus, User, UserRole
 from app.schemas import ChallengeCreate, ChallengeUpdate
 from app.services.storage_service import StorageService
 
@@ -11,8 +11,10 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 class ChallengeService:
     @staticmethod
-    def get_challenges(db: Session):
-        return db.query(Challenge).order_by(Challenge.created_at.desc()).all()
+    def get_challenges(db: Session, current_user: User):
+        if current_user.role in [UserRole.ADMIN, UserRole.SUPERADMIN]:
+            return db.query(Challenge).order_by(Challenge.created_at.desc()).all()
+        return db.query(Challenge).filter(Challenge.status == ChallengeStatus.ACTIVE).order_by(Challenge.created_at.desc()).all()
 
     @staticmethod
     def get_challenge(db: Session, challenge_id: str):

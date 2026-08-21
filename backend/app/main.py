@@ -6,6 +6,9 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from app.core.config import settings
 from app.routes import auth, challenges, projects, submissions
+from app.core.database import SessionLocal
+from app.core.bootstrap import init_bootstrap_users
+
 
 app = FastAPI(
     title="PixelTest API",
@@ -23,6 +26,13 @@ if settings.CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"--> {request.method} {request.url.path}")
+    response = await call_next(request)
+    print(f"<-- {request.method} {request.url.path} Status: {response.status_code}")
+    return response
+
 # Exception Handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -32,6 +42,16 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "An internal server error occurred. Please try again later."}
     )
+
+
+
+@app.on_event("startup")
+def on_startup():
+    db = SessionLocal()
+    try:
+        init_bootstrap_users(db)
+    finally:
+        db.close()
 
 # Include API Routers
 app.include_router(auth.router)

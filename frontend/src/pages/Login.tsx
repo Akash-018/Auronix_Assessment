@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../services/api';
-import { Lock, Mail, Code2, AlertCircle } from 'lucide-react';
+import { Lock, Mail, Code2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('admin@pixeltest.com');
-  const [password, setPassword] = useState('AdminPassword123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -71,7 +72,7 @@ export const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#161e2e] border border-[#273549] focus:border-blue-500 text-white rounded-lg pl-10 pr-4 py-2.5 outline-none transition text-sm"
-                placeholder="admin@pixeltest.com"
+                placeholder="name@company.com"
               />
             </div>
           </div>
@@ -83,13 +84,20 @@ export const Login: React.FC = () => {
             <div className="relative">
               <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#161e2e] border border-[#273549] focus:border-blue-500 text-white rounded-lg pl-10 pr-4 py-2.5 outline-none transition text-sm"
+                className="w-full bg-[#161e2e] border border-[#273549] focus:border-blue-500 text-white rounded-lg pl-10 pr-10 py-2.5 outline-none transition text-sm"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 
@@ -98,13 +106,9 @@ export const Login: React.FC = () => {
             disabled={isLoading}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition duration-200 flex items-center justify-center text-sm shadow-lg shadow-blue-600/20 disabled:opacity-50"
           >
-            {isLoading ? 'Authenticating...' : 'Sign In as Admin'}
+            {isLoading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="mt-6 text-center border-t border-[#273549] pt-4 text-xs text-gray-500">
-          Default Admin: admin@pixeltest.com / AdminPassword123!
-        </div>
       </div>
     </div>
   );

@@ -38,7 +38,9 @@ npm run dev
 ```
 Open `http://localhost:5173` in your browser.
 
-Default Admin Credentials: `admin@pixeltest.com` / `AdminPassword123!`
+### Default Test Credentials:
+- **Admin**: `akash@auxonix.com` / `admin@2602!`
+- **User**: `bhargavi.d@auronix.com` / `CEO@2003!`
 
 ---
 
@@ -47,3 +49,41 @@ Default Admin Credentials: `admin@pixeltest.com` / `AdminPassword123!`
 docker-compose up --build
 ```
 Access the full-stack web service at `http://localhost:8000`.
+
+---
+
+## Inspecting Database Content via Docker (`docker exec`)
+
+### How to find your container name:
+Run `docker ps` in your terminal to list all running containers. In your `docker-compose.yml`, the database container is named **`pixeltest-db`**.
+
+---
+
+### 1. View Users Table
+```bash
+docker exec pixeltest-db psql -U postgres -d pixeltest -c "SELECT id, email, role, is_active, created_at FROM users;"
+```
+*Expected Output:*
+```text
+ id |         email          | role  | is_active |          created_at           
+----+------------------------+-------+-----------+-------------------------------
+ 1  | akash@auxonix.com      | ADMIN | t         | 2026-08-21 19:30:33.000000+00
+ 2  | bhargavi.d@auronix.com | USER  | t         | 2026-08-21 19:30:33.000000+00
+(2 rows)
+```
+
+### 2. View Challenges Table
+```bash
+docker exec pixeltest-db psql -U postgres -d pixeltest -c "SELECT id, title, status, created_by, created_at FROM challenges;"
+```
+
+### 3. Open Interactive PostgreSQL Shell
+```bash
+docker exec -it pixeltest-db psql -U postgres -d pixeltest
+```
+*Once inside the shell, you can run:*
+- `\dt` — List all tables
+- `SELECT * FROM users;` — View users
+- `\q` — Exit the shell
+
+*(Note: If running locally without Docker/PostgreSQL using SQLite, inspect `backend/pixeltest.db` with `sqlite3 backend/pixeltest.db`)*

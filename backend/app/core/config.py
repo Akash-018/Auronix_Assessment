@@ -17,8 +17,11 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:8005", "http://127.0.0.1:5173", "http://127.0.0.1:8005"]
     
-    INITIAL_ADMIN_EMAIL: str = "admin@pixeltest.com"
-    INITIAL_ADMIN_PASSWORD: str = "AdminPassword123!"
+    INITIAL_ADMIN_EMAIL: str = "akash@auxonix.com"
+    INITIAL_ADMIN_PASSWORD: str = "admin@2602!"
+
+    INITIAL_USER_EMAIL: str = "bhargavi.d@auronix.com"
+    INITIAL_USER_PASSWORD: str = "CEO@2003!"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

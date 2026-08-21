@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/challenges", tags=["challenges"])
 
 @router.get("", response_model=List[ChallengeResponse])
 def list_challenges(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return ChallengeService.get_challenges(db)
+    return ChallengeService.get_challenges(db, current_user)
 
 @router.post("", response_model=ChallengeResponse)
 def create_challenge(

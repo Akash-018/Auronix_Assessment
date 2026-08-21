@@ -14,6 +14,7 @@ def utc_now():
 class UserRole(str, PyEnum):
     SUPERADMIN = "SUPERADMIN"
     ADMIN = "ADMIN"
+    USER = "USER"
     CANDIDATE = "CANDIDATE"
 
 class ChallengeStatus(str, PyEnum):
