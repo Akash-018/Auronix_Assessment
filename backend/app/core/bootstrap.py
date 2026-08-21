@@ -3,6 +3,7 @@ import logging
 from sqlalchemy.orm import Session
 from app.models import User, UserRole
 from app.core.security import get_password_hash
+from app.core.config import settings
 
 logger = logging.getLogger("pixeltest.bootstrap")
 
@@ -12,10 +13,10 @@ def init_bootstrap_users(db: Session) -> None:
     Only runs if corresponding environment variables are provided.
     Never overwrites existing users or passwords.
     """
-    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL")
-    admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD")
-    user_email = os.getenv("BOOTSTRAP_USER_EMAIL")
-    user_password = os.getenv("BOOTSTRAP_USER_PASSWORD")
+    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL", settings.INITIAL_ADMIN_EMAIL)
+    admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", settings.INITIAL_ADMIN_PASSWORD)
+    user_email = os.getenv("BOOTSTRAP_USER_EMAIL", settings.INITIAL_USER_EMAIL)
+    user_password = os.getenv("BOOTSTRAP_USER_PASSWORD", settings.INITIAL_USER_PASSWORD)
 
     # 1. Admin Bootstrap
     if admin_email and admin_password:
