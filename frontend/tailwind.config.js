@@ -7,17 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#090d16",
-        surface: "#111827",
-        panel: "#161e2e",
-        border: "#273549",
-        primary: {
-          50: '#f0f7ff',
-          100: '#e0effe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-        }
+        bgMain: "#13191D",
+        bgAlt: "#1B2328",
+        bgCard: "#232D33",
+        borderDark: "#34414A",
+        textPrimary: "#F7F5F2",
+        textSecondary: "#C9C7C3",
+        textMuted: "#8D9498",
+        brandChampagne: "#D9C8A3",
+        brandGold: "#B89C5E",
+        brandLime: "#B8FF4F",
+        colorSuccess: "#4ADE80",
+        colorWarning: "#FFC857",
+        colorError: "#FF5F5F",
       }
     },
   },

@@ -40,20 +40,20 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-[#111827] border border-[#273549] rounded-xl p-8 shadow-2xl">
+    <div className="min-h-screen bg-[#13191D] flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md bg-[#1B2328] border border-[#34414A] rounded-xl p-8 shadow-2xl">
         <div className="flex items-center justify-center space-x-3 mb-6">
-          <div className="p-2.5 bg-blue-600/20 text-blue-500 rounded-lg border border-blue-500/30">
+          <div className="p-2.5 bg-[#D9C8A3]/10 text-[#D9C8A3] rounded-lg border border-[#D9C8A3]/30">
             <Code2 className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-wide">PixelTest</h1>
-            <p className="text-xs text-gray-400">Frontend Assessment Workspace</p>
+            <h1 className="text-2xl font-bold text-[#F7F5F2] tracking-wide">PixelTest</h1>
+            <p className="text-xs text-[#8D9498]">Frontend Assessment Workspace</p>
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center space-x-3 text-red-400 text-sm">
+          <div className="mb-6 p-4 bg-[#FF5F5F]/10 border border-[#FF5F5F]/30 rounded-lg flex items-center space-x-3 text-[#FF5F5F] text-sm">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -61,40 +61,40 @@ export const Login: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#C9C7C3] mb-2">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8D9498]" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#161e2e] border border-[#273549] focus:border-blue-500 text-white rounded-lg pl-10 pr-4 py-2.5 outline-none transition text-sm"
+                className="w-full bg-[#232D33] border border-[#34414A] focus:border-[#D9C8A3] text-[#F7F5F2] rounded-lg pl-10 pr-4 py-2.5 outline-none transition text-sm"
                 placeholder="name@company.com"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#C9C7C3] mb-2">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8D9498]" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#161e2e] border border-[#273549] focus:border-blue-500 text-white rounded-lg pl-10 pr-10 py-2.5 outline-none transition text-sm"
+                className="w-full bg-[#232D33] border border-[#34414A] focus:border-[#D9C8A3] text-[#F7F5F2] rounded-lg pl-10 pr-10 py-2.5 outline-none transition text-sm"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8D9498] hover:text-[#B8FF4F] transition"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -104,7 +104,7 @@ export const Login: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition duration-200 flex items-center justify-center text-sm shadow-lg shadow-blue-600/20 disabled:opacity-50"
+            className="w-full bg-[#D9C8A3] hover:bg-[#B8FF4F] text-[#13191D] font-bold py-2.5 rounded-lg transition duration-200 flex items-center justify-center text-sm shadow-lg shadow-[#D9C8A3]/10 disabled:opacity-50"
           >
             {isLoading ? 'Authenticating...' : 'Sign In'}
           </button>

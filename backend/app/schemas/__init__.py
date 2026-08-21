@@ -81,3 +81,17 @@ class SubmissionResponse(BaseModel):
     status: SubmissionStatus
 
     model_config = ConfigDict(from_attributes=True)
+
+class SubmissionDetailResponse(BaseModel):
+    id: str
+    project_id: str
+    challenge_id: Optional[str] = None
+    challenge_title: str
+    candidate_email: str
+    submitted_at: datetime
+    status: SubmissionStatus
+    html_code: Optional[str] = None
+    css_code: Optional[str] = None
+    js_code: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

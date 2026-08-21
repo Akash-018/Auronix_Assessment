@@ -62,3 +62,16 @@ export interface Submission {
   evaluation_details?: Record<string, any>;
   status: SubmissionStatus;
 }
+
+export interface SubmissionDetail {
+  id: string;
+  project_id: string;
+  challenge_id?: string;
+  challenge_title: string;
+  candidate_email: string;
+  submitted_at: string;
+  status: SubmissionStatus;
+  html_code?: string;
+  css_code?: string;
+  js_code?: string;
+}

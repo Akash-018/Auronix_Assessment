@@ -139,19 +139,19 @@ export const ChallengeBuilder: React.FC = () => {
   }
 
   return (
-    <div className="h-screen bg-[#090d16] text-gray-200 flex flex-col overflow-hidden">
+    <div className="h-screen bg-[#13191D] text-[#F7F5F2] flex flex-col overflow-hidden">
       {/* Top Navbar */}
-      <header className="bg-[#111827] border-b border-[#273549] px-4 py-2 flex items-center justify-between select-none">
+      <header className="bg-[#1B2328] border-b border-[#34414A] px-4 py-2 flex items-center justify-between select-none">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate('/dashboard')}
-            className="p-1.5 hover:bg-[#161e2e] rounded-lg text-gray-400 hover:text-white border border-transparent hover:border-[#273549] transition"
+            className="p-1.5 hover:bg-[#232D33] rounded-lg text-[#C9C7C3] hover:text-[#F7F5F2] border border-transparent hover:border-[#34414A] transition"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center space-x-2">
-            <Code2 className="w-5 h-5 text-blue-500" />
-            <h1 className="text-sm font-bold text-white tracking-wide truncate max-w-xs">
+            <Code2 className="w-5 h-5 text-[#D9C8A3]" />
+            <h1 className="text-sm font-bold text-[#F7F5F2] tracking-wide truncate max-w-xs">
               {challenge?.title || 'PixelTest Builder'}
             </h1>
           </div>
@@ -160,44 +160,65 @@ export const ChallengeBuilder: React.FC = () => {
         {/* Action Controls & Save Status */}
         <div className="flex items-center space-x-3">
           {/* Status Indicator */}
-          <div className="flex items-center space-x-1.5 px-3 py-1 bg-[#161e2e] border border-[#273549] rounded-lg text-xs">
+          <div className="flex items-center space-x-1.5 px-3 py-1 bg-[#232D33] border border-[#34414A] rounded-lg text-xs">
             {saveStatus === 'saved' && (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-gray-400">Autosaved</span>
+                <Check className="w-3.5 h-3.5 text-[#4ADE80]" />
+                <span className="text-[#C9C7C3]">Autosaved</span>
               </>
             )}
             {saveStatus === 'saving' && (
               <>
-                <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" />
-                <span className="text-blue-400">Saving...</span>
+                <RefreshCw className="w-3.5 h-3.5 text-[#D9C8A3] animate-spin" />
+                <span className="text-[#D9C8A3]">Saving...</span>
               </>
             )}
             {saveStatus === 'unsaved' && (
               <>
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                <span className="text-amber-400">Unsaved changes</span>
+                <span className="w-2 h-2 rounded-full bg-[#FFC857] animate-pulse"></span>
+                <span className="text-[#FFC857]">Unsaved changes</span>
               </>
             )}
             {saveStatus === 'offline' && (
               <>
-                <CloudOff className="w-3.5 h-3.5 text-red-400" />
-                <span className="text-red-400">Offline — saved locally</span>
+                <CloudOff className="w-3.5 h-3.5 text-[#FF5F5F]" />
+                <span className="text-[#FF5F5F]">Offline — saved locally</span>
               </>
             )}
           </div>
 
           <button
             onClick={handleSave}
-            className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1.5 rounded-lg text-xs transition shadow-md shadow-blue-600/20"
+            className="flex items-center space-x-1.5 bg-[#D9C8A3] hover:bg-[#B8FF4F] text-[#13191D] font-bold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
           >
             <Save className="w-3.5 h-3.5" />
             <span>Save</span>
           </button>
 
+          {project && (
+            <button
+              onClick={async () => {
+                if (confirm('Are you ready to submit this test attempt?')) {
+                  try {
+                    await handleSave();
+                    await api.post(`/projects/${project.id}/submit`);
+                    alert('Test submitted successfully!');
+                    navigate('/dashboard');
+                  } catch (err) {
+                    alert('Failed to submit test.');
+                  }
+                }
+              }}
+              className="flex items-center space-x-1.5 bg-[#4ADE80] hover:bg-[#B8FF4F] text-[#13191D] font-bold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>Submit Test</span>
+            </button>
+          )}
+
           <button
             onClick={handleReset}
-            className="flex items-center space-x-1.5 bg-[#161e2e] hover:bg-[#273549] text-gray-300 px-3 py-1.5 rounded-lg text-xs border border-[#273549] transition"
+            className="flex items-center space-x-1.5 bg-[#232D33] hover:bg-[#34414A] text-[#C9C7C3] px-3 py-1.5 rounded-lg text-xs border border-[#34414A] transition"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Code</span>
