@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.core.config import settings
 from app.routes import auth, challenges, projects, submissions
 from app.core.database import SessionLocal
-from app.core.bootstrap import init_bootstrap_users
+from app.core.bootstrap import init_bootstrap_users, init_bootstrap_challenges
 
 
 app = FastAPI(
@@ -50,6 +50,7 @@ def on_startup():
     db = SessionLocal()
     try:
         init_bootstrap_users(db)
+        init_bootstrap_challenges(db)
     finally:
         db.close()
 
