@@ -39,7 +39,7 @@ npm run dev
 Open `http://localhost:5173` in your browser.
 
 ### Default Test Credentials:
-- **Admin**: `akash@auxonix.com` / `admin@2602!`
+- **Admin**: `akash@auronix.com` / `admin@2602!`
 - **User**: `bhargavi.d@auronix.com` / `CEO@2003!`
 
 ---

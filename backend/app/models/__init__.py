@@ -17,6 +17,10 @@ class UserRole(str, PyEnum):
     USER = "USER"
     CANDIDATE = "CANDIDATE"
 
+class ChallengeCategory(str, PyEnum):
+    HTML = "HTML"
+    JS = "JS"
+
 class ChallengeStatus(str, PyEnum):
     DRAFT = "DRAFT"
     ACTIVE = "ACTIVE"
@@ -47,6 +51,9 @@ class Challenge(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
+    category = Column(Enum(ChallengeCategory), default=ChallengeCategory.HTML, nullable=False)
+    starter_js = Column(Text, nullable=True)
+    test_cases = Column(JSON, nullable=True)
     reference_image_url = Column(Text, nullable=True)
     reference_width = Column(Integer, nullable=True)
     reference_height = Column(Integer, nullable=True)

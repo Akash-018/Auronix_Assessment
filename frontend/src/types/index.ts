@@ -5,6 +5,11 @@ export enum UserRole {
   CANDIDATE = 'CANDIDATE',
 }
 
+export enum ChallengeCategory {
+  HTML = 'HTML',
+  JS = 'JS',
+}
+
 export enum ChallengeStatus {
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
@@ -29,6 +34,9 @@ export interface Challenge {
   id: string;
   title: string;
   description?: string;
+  category: ChallengeCategory;
+  starter_js?: string;
+  test_cases?: Record<string, any>;
   reference_image_url?: string;
   reference_width?: number;
   reference_height?: number;

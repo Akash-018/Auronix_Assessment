@@ -51,6 +51,11 @@ export const ChallengeBuilder: React.FC = () => {
         const cRes = await api.get<Challenge>(`/challenges/${challengeId}`);
         setChallenge(cRes.data);
 
+        // Auto focus JS tab if JS category
+        if (cRes.data.category === 'JS') {
+          useProjectStore.getState().setActiveTab('js');
+        }
+
         // Fetch or create user project
         const pRes = await api.post<Project>('/projects', { challenge_id: challengeId });
         setProject(pRes.data);

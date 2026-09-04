@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Challenge, SubmissionDetail } from '../types';
 import { useAuthStore } from '../stores/authStore';
+import { CandidatePerformanceCard } from '../components/dashboard/CandidatePerformanceCard';
 import {
   Plus,
   Code2,
@@ -25,6 +26,7 @@ export const Dashboard: React.FC = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionDetail[]>([]);
   const [activeTab, setActiveTab] = useState<'tests' | 'submissions'>('tests');
+  const [categoryTab, setCategoryTab] = useState<'HTML' | 'JS'>('HTML');
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetail | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +36,8 @@ export const Dashboard: React.FC = () => {
   // Form state for challenge creation
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<'HTML' | 'JS'>('HTML');
+  const [starterJs, setStarterJs] = useState('// Define the starter function stub for candidates\nfunction solveProblem(input) {\n  // TODO: Implement solution\n  return input;\n}');
   const [file, setFile] = useState<File | null>(null);
 
   const user = useAuthStore((state) => state.user);
@@ -73,6 +77,8 @@ export const Dashboard: React.FC = () => {
       const createRes = await api.post<Challenge>('/challenges', {
         title: title || undefined,
         description: description || undefined,
+        category,
+        starter_js: category === 'JS' ? starterJs : undefined,
       });
 
       const newChallenge = createRes.data;
@@ -177,82 +183,54 @@ export const Dashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Stats Row for Admin */}
-        {isAdmin && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#1B2328] border border-[#34414A] rounded-xl p-5 flex items-center space-x-4">
-              <div className="p-3 bg-[#D9C8A3]/10 text-[#D9C8A3] rounded-lg">
-                <FolderKanban className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="text-xs text-[#8D9498] uppercase font-semibold">Total Tests</div>
-                <div className="text-2xl font-bold text-[#F7F5F2]">{challenges.length}</div>
-              </div>
-            </div>
-            <div className="bg-[#1B2328] border border-[#34414A] rounded-xl p-5 flex items-center space-x-4">
-              <div className="p-3 bg-[#4ADE80]/10 text-[#4ADE80] rounded-lg">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="text-xs text-[#8D9498] uppercase font-semibold">Published (Active)</div>
-                <div className="text-2xl font-bold text-[#F7F5F2]">{activeCount}</div>
-              </div>
-            </div>
-            <div className="bg-[#1B2328] border border-[#34414A] rounded-xl p-5 flex items-center space-x-4">
-              <div className="p-3 bg-[#B89C5E]/10 text-[#B89C5E] rounded-lg">
-                <UserCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="text-xs text-[#8D9498] uppercase font-semibold">Candidate Submissions</div>
-                <div className="text-2xl font-bold text-[#F7F5F2]">{submissions.length}</div>
-              </div>
-            </div>
-          </div>
+        {/* Candidate Performance Dashboard Widget */}
+        {!isAdmin && (
+          <CandidatePerformanceCard submissions={submissions} challenges={challenges} />
         )}
 
-        {/* Tab Navigation for Admin */}
-        {isAdmin && (
-          <div className="flex border-b border-[#34414A] space-x-6 text-sm">
-            <button
-              onClick={() => setActiveTab('tests')}
-              className={`pb-3 font-semibold transition border-b-2 flex items-center space-x-2 ${
-                activeTab === 'tests'
-                  ? 'border-[#D9C8A3] text-[#D9C8A3]'
-                  : 'border-transparent text-[#8D9498] hover:text-[#F7F5F2]'
-              }`}
-            >
-              <FolderKanban className="w-4 h-4" />
-              <span>Managed Tests ({challenges.length})</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('submissions')}
-              className={`pb-3 font-semibold transition border-b-2 flex items-center space-x-2 ${
-                activeTab === 'submissions'
-                  ? 'border-[#D9C8A3] text-[#D9C8A3]'
-                  : 'border-transparent text-[#8D9498] hover:text-[#F7F5F2]'
-              }`}
-            >
-              <ClipboardList className="w-4 h-4" />
-              <span>Candidate Submissions ({submissions.length})</span>
-            </button>
-          </div>
-        )}
+        {/* Tab Navigation */}
+        <div className="flex border-b border-[#34414A] space-x-6 text-sm">
+          <button
+            onClick={() => setActiveTab('tests')}
+            className={`pb-3 font-semibold transition border-b-2 flex items-center space-x-2 ${
+              activeTab === 'tests'
+                ? 'border-[#D9C8A3] text-[#D9C8A3]'
+                : 'border-transparent text-[#8D9498] hover:text-[#F7F5F2]'
+            }`}
+          >
+            <FolderKanban className="w-4 h-4" />
+            <span>{isAdmin ? `Managed Tests (${challenges.length})` : `Available Assessments (${challenges.length})`}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('submissions')}
+            className={`pb-3 font-semibold transition border-b-2 flex items-center space-x-2 ${
+              activeTab === 'submissions'
+                ? 'border-[#D9C8A3] text-[#D9C8A3]'
+                : 'border-transparent text-[#8D9498] hover:text-[#F7F5F2]'
+            }`}
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span>{isAdmin ? `Candidate Submissions (${submissions.length})` : `My Submitted Tests (${submissions.length})`}</span>
+          </button>
+        </div>
 
         {/* Section View */}
-        {isAdmin && activeTab === 'submissions' ? (
+        {activeTab === 'submissions' ? (
           <div>
-            <h3 className="text-lg font-semibold text-[#F7F5F2] mb-4">Candidate Test Results & Code</h3>
+            <h3 className="text-lg font-semibold text-[#F7F5F2] mb-4">
+              {isAdmin ? 'Candidate Test Results & Code' : 'My Completed Submissions & Code'}
+            </h3>
             {submissions.length === 0 ? (
               <div className="bg-[#1B2328] border border-dashed border-[#34414A] rounded-2xl p-12 text-center text-[#8D9498] text-sm">
                 <ClipboardList className="w-12 h-12 mx-auto text-[#8D9498] mb-3" />
-                No candidate submissions received yet.
+                {isAdmin ? 'No candidate submissions received yet.' : 'You have not submitted any test attempts yet.'}
               </div>
             ) : (
               <div className="bg-[#1B2328] border border-[#34414A] rounded-xl overflow-hidden shadow-xl">
                 <table className="w-full text-left text-sm text-[#C9C7C3]">
                   <thead className="bg-[#232D33] text-xs uppercase text-[#8D9498] border-b border-[#34414A]">
                     <tr>
-                      <th className="px-6 py-3.5 font-semibold">Candidate Email</th>
+                      <th className="px-6 py-3.5 font-semibold">{isAdmin ? 'Candidate Email' : 'Account Email'}</th>
                       <th className="px-6 py-3.5 font-semibold">Test Title</th>
                       <th className="px-6 py-3.5 font-semibold">Submitted At</th>
                       <th className="px-6 py-3.5 font-semibold">Status</th>
@@ -278,7 +256,7 @@ export const Dashboard: React.FC = () => {
                             className="inline-flex items-center space-x-1 bg-[#D9C8A3]/10 hover:bg-[#D9C8A3] text-[#D9C8A3] hover:text-[#13191D] px-3 py-1.5 rounded-lg text-xs font-bold border border-[#D9C8A3]/30 transition"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>View Submitted Code</span>
+                            <span>Inspect Solution Code</span>
                           </button>
                         </td>
                       </tr>
@@ -289,118 +267,165 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
         ) : (
-          /* Challenge Cards Grid */
-          <div>
-            <h3 className="text-lg font-semibold text-[#F7F5F2] mb-4">
-              {isAdmin ? 'All Managed Tests' : 'Published Assessments'}
-            </h3>
+          /* Challenge Cards Grid with Category Sidebar */
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Category Sidebar Navigation */}
+            <aside className="lg:col-span-1 bg-[#1B2328] border border-[#34414A] rounded-2xl p-5 h-fit space-y-3 shadow-xl">
+              <h3 className="text-xs font-bold text-[#8D9498] uppercase tracking-wider px-3 mb-2">
+                Test Categories
+              </h3>
+              <button
+                onClick={() => setCategoryTab('HTML')}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition ${
+                  categoryTab === 'HTML'
+                    ? 'bg-[#D9C8A3] text-[#13191D] shadow-md'
+                    : 'bg-[#232D33] text-[#C9C7C3] hover:text-[#F7F5F2] hover:bg-[#2D3941] border border-[#34414A]'
+                }`}
+              >
+                <div className="flex items-center space-x-2.5">
+                  <FileCode className="w-4 h-4" />
+                  <span>HTML & Visual Tests</span>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${categoryTab === 'HTML' ? 'bg-[#13191D]/20 text-[#13191D]' : 'bg-[#13191D] text-[#8D9498]'}`}>
+                  {challenges.filter((c) => (c.category || 'HTML') === 'HTML').length}
+                </span>
+              </button>
 
-          {isLoading ? (
-            <div className="text-center py-12 text-[#8D9498] text-sm">Loading assessments...</div>
-          ) : challenges.length === 0 ? (
-            <div className="bg-[#1B2328] border border-dashed border-[#34414A] rounded-2xl p-12 text-center">
-              <ImageIcon className="w-12 h-12 mx-auto text-[#8D9498] mb-3" />
-              <h4 className="text-lg font-medium text-[#F7F5F2] mb-1">
-                {isAdmin ? 'No tests created yet' : 'No tests currently available'}
-              </h4>
-              <p className="text-sm text-[#C9C7C3] mb-4">
-                {isAdmin
-                  ? 'Get started by creating your first assessment test.'
-                  : 'Please check back later once an admin publishes a test.'}
-              </p>
-              {isAdmin && (
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="bg-[#D9C8A3] hover:bg-[#B8FF4F] text-[#13191D] font-bold px-4 py-2 rounded-lg text-sm transition"
-                >
-                  Create Test
-                </button>
+              <button
+                onClick={() => setCategoryTab('JS')}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition ${
+                  categoryTab === 'JS'
+                    ? 'bg-[#D9C8A3] text-[#13191D] shadow-md'
+                    : 'bg-[#232D33] text-[#C9C7C3] hover:text-[#F7F5F2] hover:bg-[#2D3941] border border-[#34414A]'
+                }`}
+              >
+                <div className="flex items-center space-x-2.5">
+                  <Code className="w-4 h-4" />
+                  <span>JavaScript Tests</span>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${categoryTab === 'JS' ? 'bg-[#13191D]/20 text-[#13191D]' : 'bg-[#13191D] text-[#8D9498]'}`}>
+                  {challenges.filter((c) => c.category === 'JS').length}
+                </span>
+              </button>
+            </aside>
+
+            {/* Test Cards List */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-[#F7F5F2]">
+                  {categoryTab === 'HTML' ? 'HTML & CSS Visual Layout Tests' : 'JavaScript Method & Logic Tests'}
+                </h3>
+                <span className="text-xs text-[#8D9498]">
+                  Showing {challenges.filter((c) => (c.category || 'HTML') === categoryTab).length} tests
+                </span>
+              </div>
+
+              {isLoading ? (
+                <div className="text-center py-12 text-[#8D9498] text-sm">Loading assessments...</div>
+              ) : challenges.filter((c) => (c.category || 'HTML') === categoryTab).length === 0 ? (
+                <div className="bg-[#1B2328] border border-dashed border-[#34414A] rounded-2xl p-12 text-center">
+                  <ImageIcon className="w-12 h-12 mx-auto text-[#8D9498] mb-3" />
+                  <h4 className="text-lg font-medium text-[#F7F5F2] mb-1">
+                    No {categoryTab === 'HTML' ? 'HTML' : 'JavaScript'} tests available
+                  </h4>
+                  <p className="text-sm text-[#C9C7C3] mb-4">
+                    {isAdmin
+                      ? `Create your first ${categoryTab} assessment test.`
+                      : `No ${categoryTab} tests published currently.`}
+                  </p>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setCategory(categoryTab);
+                        setShowModal(true);
+                      }}
+                      className="bg-[#D9C8A3] hover:bg-[#B8FF4F] text-[#13191D] font-bold px-4 py-2 rounded-lg text-sm transition"
+                    >
+                      Create {categoryTab} Test
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {challenges
+                    .filter((item) => (item.category || 'HTML') === categoryTab)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => navigate(`/builder/${item.id}`)}
+                        className="group bg-[#1B2328] border border-[#34414A] hover:border-[#D9C8A3]/50 rounded-xl overflow-hidden shadow-lg transition duration-200 cursor-pointer flex flex-col justify-between"
+                      >
+                        <div className="p-5">
+                          <div className="flex items-start justify-between mb-3">
+                            <span
+                              className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                                item.status === 'ACTIVE'
+                                  ? 'bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30'
+                                  : 'bg-[#FFC857]/10 text-[#FFC857] border-[#FFC857]/30'
+                              }`}
+                            >
+                              {item.status === 'ACTIVE' ? 'Published' : 'Draft'}
+                            </span>
+                            {isAdmin && (
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={(e) => handleTogglePublish(e, item)}
+                                  className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition ${
+                                    item.status === 'ACTIVE'
+                                      ? 'bg-[#FFC857]/20 hover:bg-[#FFC857]/30 text-[#FFC857] border-[#FFC857]/40'
+                                      : 'bg-[#4ADE80] hover:bg-[#B8FF4F] text-[#13191D] border-[#4ADE80]'
+                                  }`}
+                                >
+                                  {item.status === 'ACTIVE' ? 'Unpublish' : 'Publish Test'}
+                                </button>
+                                <button
+                                  onClick={(e) => handleDeleteChallenge(e, item.id)}
+                                  title="Delete test"
+                                  className="text-[#8D9498] hover:text-[#FF5F5F] p-1 transition"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <h3 className="text-lg font-bold text-[#F7F5F2] group-hover:text-[#D9C8A3] transition mb-1">
+                            {item.title}
+                          </h3>
+                          <p className="text-xs text-[#C9C7C3] line-clamp-2 mb-4">
+                            {item.description || 'No description provided.'}
+                          </p>
+
+                          {/* Reference Preview or Category Badge */}
+                          {item.reference_image_url ? (
+                            <div className="relative h-32 bg-[#13191D] rounded-lg overflow-hidden border border-[#34414A]">
+                              <img
+                                src={item.reference_image_url}
+                                alt={item.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-80 group-hover:opacity-100"
+                              />
+                            </div>
+                          ) : (
+                            <div className="h-32 bg-[#13191D] rounded-lg border border-[#34414A] flex flex-col items-center justify-center text-[#8D9498] text-xs">
+                              {item.category === 'JS' ? <Code className="w-8 h-8 mb-1 text-[#D9C8A3]" /> : <FileCode className="w-8 h-8 mb-1 text-[#D9C8A3]" />}
+                              <span>{item.category === 'JS' ? 'JS Solution Code Test' : 'Visual Mockup Reference'}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="bg-[#232D33] px-5 py-3 border-t border-[#34414A] flex items-center justify-between text-xs text-[#C9C7C3]">
+                          <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                          <span className="flex items-center text-[#D9C8A3] font-semibold group-hover:translate-x-1 transition">
+                            <span>Open Assessment</span>
+                            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
               )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {challenges.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => navigate(`/builder/${item.id}`)}
-                  className="group bg-[#1B2328] border border-[#34414A] hover:border-[#D9C8A3]/50 rounded-xl overflow-hidden shadow-lg transition duration-200 cursor-pointer flex flex-col justify-between"
-                >
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                          item.status === 'ACTIVE'
-                            ? 'bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/30'
-                            : 'bg-[#FFC857]/10 text-[#FFC857] border-[#FFC857]/30'
-                        }`}
-                      >
-                        {item.status === 'ACTIVE' ? 'Published' : 'Draft'}
-                      </span>
-                      {isAdmin && (
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={(e) => handleTogglePublish(e, item)}
-                            className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition ${
-                              item.status === 'ACTIVE'
-                                ? 'bg-[#FFC857]/20 hover:bg-[#FFC857]/30 text-[#FFC857] border-[#FFC857]/40'
-                                : 'bg-[#4ADE80] hover:bg-[#B8FF4F] text-[#13191D] border-[#4ADE80]'
-                            }`}
-                          >
-                            {item.status === 'ACTIVE' ? 'Unpublish' : 'Publish Test'}
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteChallenge(e, item.id)}
-                            title="Delete test"
-                            className="text-[#8D9498] hover:text-[#FF5F5F] p-1 transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <h4 className="text-lg font-bold text-[#F7F5F2] group-hover:text-[#D9C8A3] transition mb-1 line-clamp-1">
-                      {item.title}
-                    </h4>
-
-                    <p className="text-xs text-[#C9C7C3] line-clamp-2 mb-4">
-                      {item.description || 'No description provided.'}
-                    </p>
-
-                    {item.reference_image_url ? (
-                      <div className="bg-[#13191D] border border-[#34414A] rounded-lg p-2 flex items-center space-x-3 text-xs text-[#C9C7C3]">
-                        <ImageIcon className="w-4 h-4 text-[#D9C8A3] flex-shrink-0" />
-                        <span className="truncate">
-                          {item.reference_width}x{item.reference_height} px (Ratio: {item.reference_aspect_ratio})
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="bg-[#13191D] border border-dashed border-[#34414A] rounded-lg p-2 text-center text-xs text-[#8D9498]">
-                        No reference image uploaded
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-[#232D33] px-5 py-3 border-t border-[#34414A] flex items-center justify-between text-xs text-[#C9C7C3] group-hover:bg-[#D9C8A3]/10 transition">
-                    <div className="flex items-center space-x-2">
-                      <span>Open Workspace</span>
-                      {submissions.some(
-                        (sub) =>
-                          (sub.challenge_id && sub.challenge_id.trim() === item.id.trim()) ||
-                          (sub.challenge_title && sub.challenge_title.trim().toLowerCase() === item.title.trim().toLowerCase())
-                      ) && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#4ADE80]/20 text-[#4ADE80] border border-[#4ADE80]/30">
-                          Submitted ✓
-                        </span>
-                      )}
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-[#D9C8A3] group-hover:translate-x-1 transition" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
         )}
       </main>
 
@@ -463,18 +488,51 @@ export const Dashboard: React.FC = () => {
       {/* Modal for Challenge Creation */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#1B2328] border border-[#34414A] rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-[#F7F5F2] mb-4">Create New Challenge</h3>
+          <div className="bg-[#1B2328] border border-[#34414A] rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-[#F7F5F2] mb-4">Create New Assessment Test</h3>
 
             <form onSubmit={handleCreateChallenge} className="space-y-4">
+              {/* Category Selector */}
               <div>
                 <label className="block text-xs font-semibold text-[#C9C7C3] uppercase tracking-wider mb-2">
-                  Upload Reference Image
+                  Test Category
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCategory('HTML')}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-2 ${
+                      category === 'HTML'
+                        ? 'bg-[#D9C8A3] text-[#13191D] border-[#D9C8A3]'
+                        : 'bg-[#232D33] text-[#C9C7C3] border-[#34414A]'
+                    }`}
+                  >
+                    <FileCode className="w-4 h-4" />
+                    <span>HTML / Visual Test</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCategory('JS')}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-2 ${
+                      category === 'JS'
+                        ? 'bg-[#D9C8A3] text-[#13191D] border-[#D9C8A3]'
+                        : 'bg-[#232D33] text-[#C9C7C3] border-[#34414A]'
+                    }`}
+                  >
+                    <Code className="w-4 h-4" />
+                    <span>JS Method / Logic Test</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#C9C7C3] uppercase tracking-wider mb-2">
+                  Upload Reference Image / Diagram (Optional)
                 </label>
                 <label className="border-2 border-dashed border-[#34414A] hover:border-[#D9C8A3] rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer bg-[#232D33] transition">
                   <Upload className="w-8 h-8 text-[#D9C8A3] mb-2" />
                   <span className="text-xs text-[#F7F5F2] font-medium">
-                    {file ? file.name : 'Click to select screenshot (PNG, JPG, WEBP)'}
+                    {file ? file.name : 'Click to select screenshot/diagram (PNG, JPG, WEBP)'}
                   </span>
                   <input
                     type="file"
@@ -487,29 +545,43 @@ export const Dashboard: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-[#C9C7C3] uppercase tracking-wider mb-1">
-                  Challenge Title (Optional)
+                  Challenge Title
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Hero Section Card"
+                  placeholder={category === 'JS' ? 'e.g. Array Flattening Function' : 'e.g. Hero Section Card'}
                   className="w-full bg-[#232D33] border border-[#34414A] focus:border-[#D9C8A3] rounded-lg px-3 py-2 text-[#F7F5F2] text-sm outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-[#C9C7C3] uppercase tracking-wider mb-1">
-                  Description (Optional)
+                  Question Description & Instructions
                 </label>
                 <textarea
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Instructions for rebuilding this reference UI..."
+                  placeholder="Detailed instructions for candidate on what method to complete..."
                   className="w-full bg-[#232D33] border border-[#34414A] focus:border-[#D9C8A3] rounded-lg px-3 py-2 text-[#F7F5F2] text-sm outline-none resize-none"
                 />
               </div>
+
+              {category === 'JS' && (
+                <div>
+                  <label className="block text-xs font-semibold text-[#D9C8A3] uppercase tracking-wider mb-1">
+                    Starter JavaScript Code / Method Stub (Admin Pre-filled)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={starterJs}
+                    onChange={(e) => setStarterJs(e.target.value)}
+                    className="w-full bg-[#13191D] border border-[#34414A] focus:border-[#D9C8A3] rounded-lg px-3 py-2 text-[#B8FF4F] font-mono text-xs outline-none resize-none"
+                  />
+                </div>
+              )}
 
               <div className="flex justify-end space-x-3 pt-4 border-t border-[#34414A]">
                 <button

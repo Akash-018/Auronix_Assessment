@@ -13,7 +13,18 @@ def list_submissions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    submissions = db.query(Submission).order_by(Submission.submitted_at.desc()).all()
+    if current_user.role in [UserRole.ADMIN, UserRole.SUPERADMIN]:
+        submissions = db.query(Submission).order_by(Submission.submitted_at.desc()).all()
+    else:
+        # Filter submissions where project owner is current user
+        submissions = (
+            db.query(Submission)
+            .join(Project, Submission.project_id == Project.id)
+            .filter(Project.owner_id == current_user.id)
+            .order_by(Submission.submitted_at.desc())
+            .all()
+        )
+        
     results = []
     
     for sub in submissions:
@@ -27,7 +38,7 @@ def list_submissions(
                 project_id=sub.project_id,
                 challenge_id=project.challenge_id if project else None,
                 challenge_title=challenge.title if challenge else "Assessment Test",
-                candidate_email=owner.email if owner else "bhargavi.d@auronix.com",
+                candidate_email=owner.email if owner else current_user.email,
                 submitted_at=sub.submitted_at,
                 status=sub.status,
                 html_code=project.html_code if project else "",

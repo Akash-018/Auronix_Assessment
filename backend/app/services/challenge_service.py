@@ -34,6 +34,9 @@ class ChallengeService:
         challenge = Challenge(
             title=title,
             description=challenge_in.description,
+            category=challenge_in.category or "HTML",
+            starter_js=challenge_in.starter_js,
+            test_cases=challenge_in.test_cases,
             status=ChallengeStatus.DRAFT,
             created_by=current_user.id
         )
@@ -49,6 +52,12 @@ class ChallengeService:
             challenge.title = challenge_in.title
         if challenge_in.description is not None:
             challenge.description = challenge_in.description
+        if challenge_in.category is not None:
+            challenge.category = challenge_in.category
+        if challenge_in.starter_js is not None:
+            challenge.starter_js = challenge_in.starter_js
+        if challenge_in.test_cases is not None:
+            challenge.test_cases = challenge_in.test_cases
         if challenge_in.status is not None:
             challenge.status = challenge_in.status
         db.commit()

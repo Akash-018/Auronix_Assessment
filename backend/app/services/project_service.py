@@ -19,9 +19,11 @@ class ProjectService:
             if not challenge:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Challenge not found")
             
+            default_js = challenge.starter_js if challenge and challenge.starter_js else '// Optional JavaScript code'
             project = Project(
                 challenge_id=challenge_id,
-                owner_id=current_user.id
+                owner_id=current_user.id,
+                js_code=default_js
             )
             db.add(project)
             db.commit()

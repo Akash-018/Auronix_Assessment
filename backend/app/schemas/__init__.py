@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Optional
-from app.models import UserRole, ChallengeStatus, SubmissionStatus
+from app.models import UserRole, ChallengeStatus, SubmissionStatus, ChallengeCategory
 
 # Auth Schemas
 class Token(BaseModel):
@@ -25,16 +25,25 @@ class UserResponse(BaseModel):
 class ChallengeCreate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    category: Optional[ChallengeCategory] = ChallengeCategory.HTML
+    starter_js: Optional[str] = None
+    test_cases: Optional[dict] = None
 
 class ChallengeUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    category: Optional[ChallengeCategory] = None
+    starter_js: Optional[str] = None
+    test_cases: Optional[dict] = None
     status: Optional[ChallengeStatus] = None
 
 class ChallengeResponse(BaseModel):
     id: str
     title: str
     description: Optional[str] = None
+    category: ChallengeCategory = ChallengeCategory.HTML
+    starter_js: Optional[str] = None
+    test_cases: Optional[dict] = None
     reference_image_url: Optional[str] = None
     reference_width: Optional[int] = None
     reference_height: Optional[int] = None
