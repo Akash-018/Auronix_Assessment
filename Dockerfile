@@ -32,4 +32,6 @@ ENV ENVIRONMENT=production
 # Wait for the database before migrating: a free-tier Postgres that has scaled to
 # zero refuses the first connection, which would fail the migration and crash-loop
 # the release.
-CMD ["sh", "-c", "python -m app.db_wait && alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# Seeding is no longer a separate step: app.main runs it on startup, so the
+# database is populated by the same code path locally and in production.
+CMD ["sh", "-c", "python -m app.db_wait && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

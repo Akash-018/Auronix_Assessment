@@ -8,11 +8,7 @@ from app.core.config import settings
 from app.routes import auth, challenges, projects, submissions
 from app.core.database import SessionLocal
 from app.db_wait import wait_for_database
-from app.core.bootstrap import (
-    init_bootstrap_users,
-    init_bootstrap_challenges,
-    init_bootstrap_sql_challenges,
-)
+from app.seed import run_seed
 
 
 app = FastAPI(
@@ -56,16 +52,19 @@ def on_startup():
     # seeding, and never let a seeding failure take the whole service down: the
     # health check must stay green so the platform does not crash-loop the deploy.
     if not wait_for_database():
-        print("Startup bootstrap skipped: database unreachable. Service starting anyway.")
+        print("Startup seed skipped: database unreachable. Service starting anyway.")
         return
 
     db = SessionLocal()
     try:
-        init_bootstrap_users(db)
-        init_bootstrap_challenges(db)
-        init_bootstrap_sql_challenges(db)
+        summary = run_seed(db)
+        print(
+            f"Startup seed complete: {summary['users']} users, "
+            f"{summary['challenges_total']} challenges {summary['challenges_by_category']}"
+        )
     except Exception as exc:
-        print(f"Startup bootstrap failed (service still starting): {exc}")
+        db.rollback()
+        print(f"Startup seed failed (service still starting): {exc}")
     finally:
         db.close()
 
