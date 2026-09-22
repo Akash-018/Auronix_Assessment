@@ -78,19 +78,6 @@ app.include_router(submissions.router)
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Serve Frontend static assets if dist exists (Production Docker bundle)
-if os.path.exists("static"):
-    app.mount("/assets", StaticFiles(directory="static/assets"), name="static_assets")
-
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        if full_path.startswith("api/") or full_path.startswith("uploads/"):
-            return JSONResponse(status_code=404, content={"detail": "Not Found"})
-        file_path = os.path.join("static", full_path)
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
-        return FileResponse("static/index.html")
-
 @app.get("/api/health")
 def health_check():
     # Always 200: this is the platform's health probe, and reporting the database
@@ -112,3 +99,21 @@ def health_check():
         "database": database,
         "database_engine": "sqlite" if IS_SQLITE else "postgresql",
     }
+
+# Serve the built frontend (production Docker bundle).
+#
+# This block MUST stay last. Starlette matches routes in registration order, and
+# `/{full_path:path}` matches everything — including `/api/...`. Registering it
+# before an API route silently shadows that route with a 404 in production only,
+# because `static/` does not exist in local development.
+if os.path.exists("static"):
+    app.mount("/assets", StaticFiles(directory="static/assets"), name="static_assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api/") or full_path.startswith("uploads/"):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        file_path = os.path.join("static", full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse("static/index.html")
