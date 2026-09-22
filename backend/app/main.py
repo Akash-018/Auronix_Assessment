@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.core.config import settings
 from app.routes import auth, challenges, projects, submissions
 from app.core.database import SessionLocal
+from app.db_wait import wait_for_database
 from app.core.bootstrap import (
     init_bootstrap_users,
     init_bootstrap_challenges,
@@ -51,11 +52,20 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 def on_startup():
+    # A sleeping free-tier database refuses the first connection. Wake it before
+    # seeding, and never let a seeding failure take the whole service down: the
+    # health check must stay green so the platform does not crash-loop the deploy.
+    if not wait_for_database():
+        print("Startup bootstrap skipped: database unreachable. Service starting anyway.")
+        return
+
     db = SessionLocal()
     try:
         init_bootstrap_users(db)
         init_bootstrap_challenges(db)
         init_bootstrap_sql_challenges(db)
+    except Exception as exc:
+        print(f"Startup bootstrap failed (service still starting): {exc}")
     finally:
         db.close()
 
@@ -84,4 +94,22 @@ if os.path.exists("static"):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "environment": settings.ENVIRONMENT}
+    # Always 200: this is the platform's health probe, and reporting the database
+    # as unhealthy would trigger a restart loop while a scale-to-zero instance is
+    # merely waking up. The database state is reported in the body instead.
+    from sqlalchemy import text
+    from app.core.database import engine, IS_SQLITE
+
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        database = "connected"
+    except Exception as exc:
+        database = f"unavailable: {type(exc).__name__}"
+
+    return {
+        "status": "ok",
+        "environment": settings.ENVIRONMENT,
+        "database": database,
+        "database_engine": "sqlite" if IS_SQLITE else "postgresql",
+    }

@@ -1,3 +1,12 @@
+# Render blueprint — web service only.
+#
+# The database is NOT provisioned here on purpose. Render's free PostgreSQL plan
+# expires 30 days after creation and is then suspended, which is what took this
+# deployment down. Point DATABASE_URL at an external provider whose free tier does
+# not expire (Neon is the recommended one — see README "Database hosting").
+#
+# DATABASE_URL is marked `sync: false`, so Render prompts for it in the dashboard
+# and keeps it out of this file and out of git.
 services:
   - type: web
     name: pixeltest-web
@@ -5,11 +14,10 @@ services:
     dockerfilePath: Dockerfile
     plan: free
     region: oregon
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: pixeltest-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_ALGORITHM
@@ -21,12 +29,6 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: INITIAL_ADMIN_EMAIL
-        value: admin@pixeltest.com
+        sync: false
       - key: INITIAL_ADMIN_PASSWORD
-        value: AdminPassword123!
-
-databases:
-  - name: pixeltest-db
-    plan: free
-    databaseName: pixeltest
-    user: pixeltest_user
+        sync: false

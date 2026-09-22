@@ -53,8 +53,9 @@ admins can add more via **Create Test → SQL / Query** in the dashboard.
 
 ### Prerequisites
 - Node.js 20+
-- Python 3.11+
-- PostgreSQL database running on `localhost:5432`
+- Python 3.11 or 3.12 (the pinned `pillow` / `pydantic` builds have no 3.13 wheels)
+- No database server needed — local dev defaults to SQLite. For Postgres parity,
+  run `docker-compose up db` and set `DATABASE_URL` accordingly.
 
 ### 1. Backend Setup
 ```bash
@@ -62,7 +63,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-alembic upgrade head        # required — adds the SQL challenge columns
+alembic upgrade head        # required — creates/updates the schema
 python -m app.seed
 uvicorn app.main:app --reload --port 8000
 ```
@@ -78,6 +79,80 @@ Open `http://localhost:5173` in your browser.
 ### Default Test Credentials:
 - **Admin**: `akash@auronix.com` / `admin@2602!`
 - **User**: `bhargavi.d@auronix.com` / `CEO@2003!`
+
+---
+
+## Database Hosting
+
+| Environment | Database | Why |
+|---|---|---|
+| Local dev | SQLite (`sqlite:///./pixeltest.db`) | Zero setup, the default |
+| Local Postgres | `docker-compose up` | Parity testing |
+| **Deployed** | **External managed Postgres** | See the warning below |
+
+> **SQLite cannot be used for the deployed app.** A Render free web service has an
+> ephemeral filesystem — no persistent disk is available on the free plan — so the
+> `.db` file is wiped on every deploy, restart and wake-from-idle. Every candidate
+> submission would be lost. SQLite is for local development only.
+
+Render's own free PostgreSQL **expires 30 days after creation** and is then
+suspended, which is what took this deployment down. Use a provider whose free tier
+does not expire instead:
+
+| Provider | Free storage | Expires? | Notes |
+|---|---|---|---|
+| **Neon** (recommended) | 0.5 GB | No | Postgres-compatible, scales to zero, auto-resumes |
+| Supabase | 0.5 GB | No | Pauses after 7 days idle, needs a manual resume |
+| Aiven | 1 GB | No | Single node |
+
+No application code changes are required — only `DATABASE_URL`. The engine is
+already tuned for scale-to-zero providers (pre-ping, short pool recycle, small pool,
+TCP keepalives), and `postgres://` URLs are normalised to `postgresql://` so a
+provider's string can be pasted in verbatim.
+
+### Migrating off the suspended Render database
+
+Nothing here deletes anything: the import is additive and skips rows that already
+exist, so it is safe to re-run.
+
+```bash
+cd backend
+
+# 1. Dump the source. Use the old Render URL if it still connects;
+#    otherwise use your local copy, which holds the same data.
+python -m app.data_transfer export --url "<OLD_DATABASE_URL>" --out backup.json
+python -m app.data_transfer export --url "sqlite:///./pixeltest.db" --out backup.json
+
+# 2. Create the schema on the new database
+DATABASE_URL="<NEW_DATABASE_URL>" alembic upgrade head
+
+# 3. Load the data
+python -m app.data_transfer import --url "<NEW_DATABASE_URL>" --in backup.json
+
+# 4. Confirm every row arrived — only then decommission the old database
+python -m app.data_transfer verify --url "<NEW_DATABASE_URL>" --in backup.json
+```
+
+The import remaps identities rather than colliding on them: users are matched by
+**email** and the five auto-seeded SQL challenges by **title**, with `created_by`,
+`owner_id`, `challenge_id` and `project_id` rewritten to point at the target's rows.
+That means it works whether you import before or after the service first boots, and
+it will not duplicate the SQL question set.
+
+### Pointing Render at the new database
+
+`render.yaml` no longer provisions a database, and `DATABASE_URL` is marked
+`sync: false` so it stays out of git. Set it in **Render → pixeltest-web →
+Environment**, then redeploy. `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` are
+also `sync: false` now — previously the admin password sat in plaintext in this repo.
+
+On boot the container runs `python -m app.db_wait && alembic upgrade head &&
+python -m app.seed`, so a sleeping database is woken and retried with backoff rather
+than crash-looping the release. `GET /api/health` reports live connectivity:
+
+```json
+{"status":"ok","environment":"production","database":"connected","database_engine":"postgresql"}
+```
 
 ---
 

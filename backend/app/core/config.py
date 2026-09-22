@@ -1,8 +1,13 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 from typing import List, Union
 import json
 
 class Settings(BaseSettings):
+    # Default targets local SQLite so `git clone && uvicorn` just works.
+    # Any deployment must override this with a managed Postgres URL — a Render
+    # free web service has an ephemeral filesystem, so a SQLite file there is
+    # wiped on every deploy, restart and wake-from-idle.
     DATABASE_URL: str = "sqlite:///./pixeltest.db"
     JWT_SECRET: str = "super-secret-pixeltest-key-change-in-production-32bytes"
     JWT_ALGORITHM: str = "HS256"
@@ -24,5 +29,20 @@ class Settings(BaseSettings):
     INITIAL_USER_PASSWORD: str = "CEO@2003!"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        """
+        Accept the connection strings managed Postgres providers actually hand out.
+
+        Neon, Supabase, Heroku and others still emit `postgres://`, a scheme
+        SQLAlchemy 2.x refuses outright. Rewriting it here means a URL can be
+        pasted into the dashboard verbatim without tripping a startup crash.
+        """
+        value = value.strip()
+        if value.startswith("postgres://"):
+            value = "postgresql://" + value[len("postgres://"):]
+        return value
 
 settings = Settings()
