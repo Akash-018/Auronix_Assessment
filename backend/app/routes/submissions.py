@@ -43,7 +43,9 @@ def list_submissions(
                 status=sub.status,
                 html_code=project.html_code if project else "",
                 css_code=project.css_code if project else "",
-                js_code=project.js_code if project else ""
+                js_code=project.js_code if project else "",
+                sql_code=(project.sql_code or "") if project else "",
+                category=challenge.category if challenge else None
             )
         )
         

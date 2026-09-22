@@ -20,6 +20,7 @@ class UserRole(str, PyEnum):
 class ChallengeCategory(str, PyEnum):
     HTML = "HTML"
     JS = "JS"
+    SQL = "SQL"
 
 class ChallengeStatus(str, PyEnum):
     DRAFT = "DRAFT"
@@ -53,6 +54,10 @@ class Challenge(Base):
     description = Column(Text, nullable=True)
     category = Column(Enum(ChallengeCategory), default=ChallengeCategory.HTML, nullable=False)
     starter_js = Column(Text, nullable=True)
+    # DDL + seed INSERT script used to build the candidate's in-browser SQLite sandbox.
+    # Only used by SQL challenges; candidates never see a starter query.
+    sql_schema = Column(Text, nullable=True)
+    difficulty = Column(String(20), nullable=True)
     test_cases = Column(JSON, nullable=True)
     reference_image_url = Column(Text, nullable=True)
     reference_width = Column(Integer, nullable=True)
@@ -75,6 +80,8 @@ class Project(Base):
     html_code = Column(Text, default='<div class="page">\n  <h1>Hello PixelTest</h1>\n</div>', nullable=False)
     css_code = Column(Text, default='body {\n  margin: 0;\n  padding: 1rem;\n  font-family: system-ui, sans-serif;\n}', nullable=False)
     js_code = Column(Text, default='// Optional JavaScript code', nullable=False)
+    # SQL answers always start completely blank — the candidate writes every character.
+    sql_code = Column(Text, default='', nullable=False, server_default='')
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
     last_saved_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)

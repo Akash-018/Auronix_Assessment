@@ -23,7 +23,9 @@ class ProjectService:
             project = Project(
                 challenge_id=challenge_id,
                 owner_id=current_user.id,
-                js_code=default_js
+                js_code=default_js,
+                # SQL challenges deliberately ship no starter query — blank canvas.
+                sql_code=''
             )
             db.add(project)
             db.commit()
@@ -48,6 +50,8 @@ class ProjectService:
         project.html_code = save_data.html_code
         project.css_code = save_data.css_code
         project.js_code = save_data.js_code
+        if save_data.sql_code is not None:
+            project.sql_code = save_data.sql_code
         project.last_saved_at = datetime.now(timezone.utc)
         
         db.commit()

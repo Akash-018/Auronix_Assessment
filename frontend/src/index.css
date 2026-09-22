@@ -24,3 +24,119 @@ body {
   display: none; /* Chrome, Safari and Opera */
 }
 
+/* Markdown styling for the SQL challenge brief panel.
+   Tailwind's preflight strips heading/list/table defaults, so they are restored here. */
+.sql-brief > *:first-child {
+  margin-top: 0;
+}
+
+.sql-brief h1,
+.sql-brief h2,
+.sql-brief h3 {
+  color: #f7f5f2;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.4em 0 0.5em;
+}
+
+.sql-brief h1 { font-size: 1.05rem; }
+.sql-brief h2 { font-size: 0.95rem; }
+.sql-brief h3 {
+  font-size: 0.85rem;
+  color: #d9c8a3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sql-brief p {
+  margin: 0 0 0.85em;
+}
+
+.sql-brief strong {
+  color: #f7f5f2;
+  font-weight: 600;
+}
+
+.sql-brief em {
+  color: #d9c8a3;
+}
+
+.sql-brief a {
+  color: #d9c8a3;
+  text-decoration: underline;
+}
+
+.sql-brief ul,
+.sql-brief ol {
+  margin: 0 0 0.85em;
+  padding-left: 1.25rem;
+}
+
+.sql-brief ul { list-style: disc; }
+.sql-brief ol { list-style: decimal; }
+.sql-brief li { margin-bottom: 0.3em; }
+
+.sql-brief code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: #161e2e;
+  border: 1px solid #273549;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  color: #b8ff4f;
+  word-break: break-word;
+}
+
+.sql-brief pre {
+  background: #0b111c;
+  border: 1px solid #273549;
+  border-radius: 10px;
+  padding: 0.85rem;
+  overflow-x: auto;
+  margin: 0 0 1em;
+}
+
+.sql-brief pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #c9c7c3;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.sql-brief table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1em;
+  font-size: 0.75rem;
+}
+
+.sql-brief th,
+.sql-brief td {
+  border: 1px solid #273549;
+  padding: 0.4rem 0.55rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.sql-brief th {
+  background: #161e2e;
+  color: #d9c8a3;
+  font-weight: 600;
+}
+
+.sql-brief blockquote {
+  border-left: 3px solid #d9c8a3;
+  padding-left: 0.85rem;
+  margin: 0 0 1em;
+  color: #8d9498;
+}
+
+.sql-brief hr {
+  border: 0;
+  border-top: 1px solid #273549;
+  margin: 1.25em 0;
+}
+

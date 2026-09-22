@@ -1,9 +1,10 @@
 import os
 import logging
 from sqlalchemy.orm import Session
-from app.models import User, UserRole, Challenge, ChallengeStatus
+from app.models import User, UserRole, Challenge, ChallengeStatus, ChallengeCategory
 from app.core.security import get_password_hash
 from app.core.config import settings
+from app.core.sql_challenges import SQL_CHALLENGES
 
 logger = logging.getLogger("pixeltest.bootstrap")
 
@@ -67,6 +68,10 @@ def init_bootstrap_challenges(db: Session) -> None:
     repaired = 0
 
     for ch in challenges:
+        # Only HTML/visual challenges need a reference screenshot. JS and SQL
+        # challenges are text-only and must not be stamped with the sample image.
+        if ch.category != ChallengeCategory.HTML:
+            continue
         if not ch.reference_image_url or ch.reference_image_url.startswith("/uploads/"):
             # Auto-repair legacy or missing image links to embedded Data URI
             ch.reference_image_url = DEFAULT_SAMPLE_IMAGE_B64
@@ -95,4 +100,51 @@ def init_bootstrap_challenges(db: Session) -> None:
     if repaired > 0:
         db.commit()
         logger.info(f"Bootstrapped/repaired {repaired} challenges with Base64 reference image Data URIs.")
+
+def init_bootstrap_sql_challenges(db: Session) -> None:
+    """
+    Idempotent seed for the SQL assessment track (5 challenges, beginner -> expert).
+
+    Matching is by title. An existing challenge is never rewritten — admins are free
+    to edit the brief — but empty sql_schema/difficulty fields are backfilled so
+    databases created before the SQL track existed pick up the sandbox script.
+    """
+    admin = db.query(User).filter(User.role == UserRole.ADMIN).first()
+    admin_id = admin.id if admin else "system"
+
+    created = 0
+    backfilled = 0
+
+    for spec in SQL_CHALLENGES:
+        existing = db.query(Challenge).filter(Challenge.title == spec["title"]).first()
+
+        if existing:
+            if not existing.sql_schema:
+                existing.sql_schema = spec["sql_schema"]
+                backfilled += 1
+            if not existing.difficulty:
+                existing.difficulty = spec["difficulty"]
+                backfilled += 1
+            continue
+
+        db.add(
+            Challenge(
+                title=spec["title"],
+                description=spec["description"],
+                category=ChallengeCategory.SQL,
+                difficulty=spec["difficulty"],
+                sql_schema=spec["sql_schema"],
+                # Intentionally no starter code: the candidate writes the whole query.
+                starter_js=None,
+                status=ChallengeStatus.ACTIVE,
+                created_by=admin_id,
+            )
+        )
+        created += 1
+
+    if created or backfilled:
+        db.commit()
+        logger.info(
+            f"SQL challenge bootstrap: {created} created, {backfilled} field(s) backfilled."
+        )
 

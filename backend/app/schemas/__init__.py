@@ -27,6 +27,8 @@ class ChallengeCreate(BaseModel):
     description: Optional[str] = None
     category: Optional[ChallengeCategory] = ChallengeCategory.HTML
     starter_js: Optional[str] = None
+    sql_schema: Optional[str] = None
+    difficulty: Optional[str] = None
     test_cases: Optional[dict] = None
 
 class ChallengeUpdate(BaseModel):
@@ -34,6 +36,8 @@ class ChallengeUpdate(BaseModel):
     description: Optional[str] = None
     category: Optional[ChallengeCategory] = None
     starter_js: Optional[str] = None
+    sql_schema: Optional[str] = None
+    difficulty: Optional[str] = None
     test_cases: Optional[dict] = None
     status: Optional[ChallengeStatus] = None
 
@@ -43,6 +47,8 @@ class ChallengeResponse(BaseModel):
     description: Optional[str] = None
     category: ChallengeCategory = ChallengeCategory.HTML
     starter_js: Optional[str] = None
+    sql_schema: Optional[str] = None
+    difficulty: Optional[str] = None
     test_cases: Optional[dict] = None
     reference_image_url: Optional[str] = None
     reference_width: Optional[int] = None
@@ -63,6 +69,7 @@ class ProjectSaveRequest(BaseModel):
     html_code: str
     css_code: str
     js_code: str
+    sql_code: Optional[str] = None
 
 class ProjectResponse(BaseModel):
     id: str
@@ -71,6 +78,7 @@ class ProjectResponse(BaseModel):
     html_code: str
     css_code: str
     js_code: str
+    sql_code: str = ""
     created_at: datetime
     updated_at: datetime
     last_saved_at: datetime
@@ -102,5 +110,7 @@ class SubmissionDetailResponse(BaseModel):
     html_code: Optional[str] = None
     css_code: Optional[str] = None
     js_code: Optional[str] = None
+    sql_code: Optional[str] = None
+    category: Optional[ChallengeCategory] = None
 
     model_config = ConfigDict(from_attributes=True)

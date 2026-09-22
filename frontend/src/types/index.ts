@@ -8,6 +8,7 @@ export enum UserRole {
 export enum ChallengeCategory {
   HTML = 'HTML',
   JS = 'JS',
+  SQL = 'SQL',
 }
 
 export enum ChallengeStatus {
@@ -36,6 +37,9 @@ export interface Challenge {
   description?: string;
   category: ChallengeCategory;
   starter_js?: string;
+  /** DDL + seed script used to build the in-browser SQLite sandbox (SQL challenges only). */
+  sql_schema?: string;
+  difficulty?: string;
   test_cases?: Record<string, any>;
   reference_image_url?: string;
   reference_width?: number;
@@ -54,6 +58,7 @@ export interface Project {
   html_code: string;
   css_code: string;
   js_code: string;
+  sql_code: string;
   created_at: string;
   updated_at: string;
   last_saved_at: string;
@@ -82,4 +87,6 @@ export interface SubmissionDetail {
   html_code?: string;
   css_code?: string;
   js_code?: string;
+  sql_code?: string;
+  category?: ChallengeCategory;
 }

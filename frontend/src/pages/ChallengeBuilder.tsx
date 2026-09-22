@@ -2,12 +2,14 @@ import React, { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { api } from '../services/api';
-import { Challenge, Project } from '../types';
+import { Challenge, ChallengeCategory, Project } from '../types';
 import { useAuthStore } from '../stores/authStore';
 import { useBuilderStore as useProjectStore } from '../stores/builderStore';
 import { ReferencePanel } from '../components/reference/ReferencePanel';
 import { MonacoEditorPanel } from '../components/editor/MonacoEditorPanel';
 import { SandboxedPreviewPanel } from '../components/preview/SandboxedPreviewPanel';
+import { SqlBriefPanel } from '../components/sql/SqlBriefPanel';
+import { SqlResultPanel } from '../components/sql/SqlResultPanel';
 import {
   Code2,
   Save,
@@ -33,7 +35,8 @@ export const ChallengeBuilder: React.FC = () => {
   const htmlCode = useProjectStore((state) => state.htmlCode);
   const cssCode = useProjectStore((state) => state.cssCode);
   const jsCode = useProjectStore((state) => state.jsCode);
-  
+  const sqlCode = useProjectStore((state) => state.sqlCode);
+
   const isDirty = useProjectStore((state) => state.isDirty);
   const saveStatus = useProjectStore((state) => state.saveStatus);
   const setSaveStatus = useProjectStore((state) => state.setSaveStatus);
@@ -51,10 +54,17 @@ export const ChallengeBuilder: React.FC = () => {
         const cRes = await api.get<Challenge>(`/challenges/${challengeId}`);
         setChallenge(cRes.data);
 
-        // Auto focus JS tab if JS category
-        if (cRes.data.category === 'JS') {
-          useProjectStore.getState().setActiveTab('js');
-        }
+        // Focus the tab matching the challenge type. Set explicitly in every branch:
+        // the store outlives navigation, so an unset tab would strand the editor on
+        // the previous challenge's language.
+        const tabForCategory = {
+          [ChallengeCategory.JS]: 'js',
+          [ChallengeCategory.SQL]: 'sql',
+          [ChallengeCategory.HTML]: 'html',
+        } as const;
+        useProjectStore
+          .getState()
+          .setActiveTab(tabForCategory[cRes.data.category] ?? 'html');
 
         // Fetch or create user project
         const pRes = await api.post<Project>('/projects', { challenge_id: challengeId });
@@ -85,6 +95,7 @@ export const ChallengeBuilder: React.FC = () => {
         html_code: htmlCode,
         css_code: cssCode,
         js_code: jsCode,
+        sql_code: sqlCode,
       });
       setSaveStatus('saved');
       // Clear local backup once saved to backend
@@ -94,10 +105,10 @@ export const ChallengeBuilder: React.FC = () => {
       // Save to localStorage as offline recovery fallback
       localStorage.setItem(
         `pixeltest_draft_${project.id}`,
-        JSON.stringify({ htmlCode, cssCode, jsCode, timestamp: Date.now() })
+        JSON.stringify({ htmlCode, cssCode, jsCode, sqlCode, timestamp: Date.now() })
       );
     }
-  }, [project, htmlCode, cssCode, jsCode, setSaveStatus]);
+  }, [project, htmlCode, cssCode, jsCode, sqlCode, setSaveStatus]);
 
   // Debounced Autosave (5 seconds)
   useEffect(() => {
@@ -116,7 +127,9 @@ export const ChallengeBuilder: React.FC = () => {
     const savedDraft = localStorage.getItem(localKey);
     if (savedDraft) {
       const parsed = JSON.parse(savedDraft);
-      useProjectStore.getState().restoreFromLocal(parsed.htmlCode, parsed.cssCode, parsed.jsCode);
+      useProjectStore
+        .getState()
+        .restoreFromLocal(parsed.htmlCode, parsed.cssCode, parsed.jsCode, parsed.sqlCode);
     }
     setShowRestoreNotice(false);
   };
@@ -128,8 +141,13 @@ export const ChallengeBuilder: React.FC = () => {
     setShowRestoreNotice(false);
   };
 
+  const isSqlChallenge = challenge?.category === ChallengeCategory.SQL;
+
   const handleReset = () => {
-    if (confirm('Reset code to default template? Reference image will NOT be deleted.')) {
+    const message = isSqlChallenge
+      ? 'Clear the SQL editor completely? Your query will be erased.'
+      : 'Reset code to default template? Reference image will NOT be deleted.';
+    if (confirm(message)) {
       resetCode();
     }
   };
@@ -258,23 +276,27 @@ export const ChallengeBuilder: React.FC = () => {
       {/* 3-Panel Resizable Workspace */}
       <div className="flex-1 overflow-hidden relative">
         <PanelGroup direction="horizontal">
-          {/* Reference Image Panel (Default 25%) */}
-          <Panel defaultSize={25} minSize={15} maxSize={45}>
-            <ReferencePanel challenge={challenge} />
+          {/* Left: reference screenshot for visual tests, question brief + schema for SQL */}
+          <Panel defaultSize={isSqlChallenge ? 32 : 25} minSize={15} maxSize={50}>
+            {isSqlChallenge ? (
+              <SqlBriefPanel challenge={challenge} />
+            ) : (
+              <ReferencePanel challenge={challenge} />
+            )}
           </Panel>
 
           <PanelResizeHandle className="w-1 bg-[#273549] hover:bg-blue-500 transition duration-150 cursor-col-resize" />
 
-          {/* Monaco Editor Panel (Default 35%) */}
-          <Panel defaultSize={35} minSize={20} maxSize={60}>
+          {/* Monaco Editor Panel */}
+          <Panel defaultSize={isSqlChallenge ? 34 : 35} minSize={20} maxSize={60}>
             <MonacoEditorPanel />
           </Panel>
 
           <PanelResizeHandle className="w-1 bg-[#273549] hover:bg-blue-500 transition duration-150 cursor-col-resize" />
 
-          {/* Live Sandboxed Preview Panel (Default 40%) */}
-          <Panel defaultSize={40} minSize={20}>
-            <SandboxedPreviewPanel />
+          {/* Right: live render for visual tests, query result grid for SQL */}
+          <Panel defaultSize={isSqlChallenge ? 34 : 40} minSize={20}>
+            {isSqlChallenge ? <SqlResultPanel /> : <SandboxedPreviewPanel />}
           </Panel>
         </PanelGroup>
       </div>

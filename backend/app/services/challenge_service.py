@@ -36,6 +36,8 @@ class ChallengeService:
             description=challenge_in.description,
             category=challenge_in.category or "HTML",
             starter_js=challenge_in.starter_js,
+            sql_schema=challenge_in.sql_schema,
+            difficulty=challenge_in.difficulty,
             test_cases=challenge_in.test_cases,
             status=ChallengeStatus.DRAFT,
             created_by=current_user.id
@@ -56,6 +58,10 @@ class ChallengeService:
             challenge.category = challenge_in.category
         if challenge_in.starter_js is not None:
             challenge.starter_js = challenge_in.starter_js
+        if challenge_in.sql_schema is not None:
+            challenge.sql_schema = challenge_in.sql_schema
+        if challenge_in.difficulty is not None:
+            challenge.difficulty = challenge_in.difficulty
         if challenge_in.test_cases is not None:
             challenge.test_cases = challenge_in.test_cases
         if challenge_in.status is not None:

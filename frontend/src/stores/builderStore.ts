@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { Challenge, Project } from '../types';
+import { Challenge, ChallengeCategory, Project } from '../types';
 
 export type ViewportMode = 'desktop' | 'tablet' | 'mobile' | 'custom' | 'match';
+export type EditorTab = 'html' | 'css' | 'js' | 'sql';
 
 interface BuilderState {
   challenge: Challenge | null;
@@ -9,12 +10,13 @@ interface BuilderState {
   htmlCode: string;
   cssCode: string;
   jsCode: string;
-  
+  sqlCode: string;
+
   viewportMode: ViewportMode;
   viewportWidth: number;
   viewportHeight: number;
   
-  activeTab: 'html' | 'css' | 'js';
+  activeTab: EditorTab;
   isDirty: boolean;
   saveStatus: 'saved' | 'saving' | 'unsaved' | 'offline';
   lastSavedAt: string | null;
@@ -24,14 +26,14 @@ interface BuilderState {
 
   setChallenge: (challenge: Challenge) => void;
   setProject: (project: Project) => void;
-  setCode: (type: 'html' | 'css' | 'js', code: string) => void;
-  setActiveTab: (tab: 'html' | 'css' | 'js') => void;
+  setCode: (type: EditorTab, code: string) => void;
+  setActiveTab: (tab: EditorTab) => void;
   setViewport: (mode: ViewportMode, width?: number, height?: number) => void;
   setSaveStatus: (status: 'saved' | 'saving' | 'unsaved' | 'offline') => void;
   setConsoleErrors: (errors: string[]) => void;
   clearConsoleErrors: () => void;
   resetCode: () => void;
-  restoreFromLocal: (html: string, css: string, js: string) => void;
+  restoreFromLocal: (html: string, css: string, js: string, sql?: string) => void;
 }
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
@@ -40,7 +42,8 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   htmlCode: '',
   cssCode: '',
   jsCode: '',
-  
+  sqlCode: '',
+
   viewportMode: 'desktop',
   viewportWidth: 1440,
   viewportHeight: 900,
@@ -66,6 +69,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       htmlCode: project.html_code,
       cssCode: project.css_code,
       jsCode: project.js_code,
+      sqlCode: project.sql_code ?? '',
       isDirty: false,
       saveStatus: 'saved',
       lastSavedAt: project.last_saved_at,
@@ -77,6 +81,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     if (type === 'html') changes.htmlCode = code;
     if (type === 'css') changes.cssCode = code;
     if (type === 'js') changes.jsCode = code;
+    if (type === 'sql') changes.sqlCode = code;
     set(changes);
   },
 
@@ -105,6 +110,13 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   clearConsoleErrors: () => set({ consoleErrors: [] }),
 
   resetCode: () => {
+    // SQL challenges have no starter content at all — resetting clears the editor
+    // back to a blank canvas rather than to a boilerplate template.
+    if (get().challenge?.category === ChallengeCategory.SQL) {
+      set({ sqlCode: '', isDirty: true, saveStatus: 'unsaved' });
+      return;
+    }
+
     set({
       htmlCode: '<div class="page">\n  <h1>Hello PixelTest</h1>\n</div>',
       cssCode: 'body {\n  margin: 0;\n  padding: 1rem;\n  font-family: system-ui, sans-serif;\n}',
@@ -114,11 +126,12 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     });
   },
 
-  restoreFromLocal: (html, css, js) => {
+  restoreFromLocal: (html, css, js, sql) => {
     set({
       htmlCode: html,
       cssCode: css,
       jsCode: js,
+      sqlCode: sql ?? get().sqlCode,
       isDirty: true,
       saveStatus: 'unsaved',
       hasUnsavedLocalChanges: false,

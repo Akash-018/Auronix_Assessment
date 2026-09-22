@@ -20,15 +20,32 @@ import {
   UserCheck,
   Clock,
   Code,
+  Database,
 } from 'lucide-react';
+
+type CategoryKey = 'HTML' | 'JS' | 'SQL';
+
+const CATEGORY_META: Record<CategoryKey, { label: string; heading: string; icon: typeof Code }> = {
+  HTML: { label: 'HTML & Visual Tests', heading: 'HTML & CSS Visual Layout Tests', icon: FileCode },
+  JS: { label: 'JavaScript Tests', heading: 'JavaScript Method & Logic Tests', icon: Code },
+  SQL: { label: 'SQL Tests', heading: 'SQL Query & Data Modelling Tests', icon: Database },
+};
+
+const DEFAULT_SQL_SCHEMA = `-- DDL + seed data for the candidate's in-browser SQLite sandbox.
+CREATE TABLE example (
+  id   INTEGER PRIMARY KEY,
+  name TEXT NOT NULL
+);
+
+INSERT INTO example (id, name) VALUES (1, 'first row');`;
 
 export const Dashboard: React.FC = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionDetail[]>([]);
   const [activeTab, setActiveTab] = useState<'tests' | 'submissions'>('tests');
-  const [categoryTab, setCategoryTab] = useState<'HTML' | 'JS'>('HTML');
+  const [categoryTab, setCategoryTab] = useState<CategoryKey>('HTML');
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetail | null>(null);
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -36,8 +53,10 @@ export const Dashboard: React.FC = () => {
   // Form state for challenge creation
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<'HTML' | 'JS'>('HTML');
+  const [category, setCategory] = useState<CategoryKey>('HTML');
+  const [difficulty, setDifficulty] = useState('Beginner');
   const [starterJs, setStarterJs] = useState('// Define the starter function stub for candidates\nfunction solveProblem(input) {\n  // TODO: Implement solution\n  return input;\n}');
+  const [sqlSchema, setSqlSchema] = useState(DEFAULT_SQL_SCHEMA);
   const [file, setFile] = useState<File | null>(null);
 
   const user = useAuthStore((state) => state.user);
@@ -79,6 +98,9 @@ export const Dashboard: React.FC = () => {
         description: description || undefined,
         category,
         starter_js: category === 'JS' ? starterJs : undefined,
+        // SQL tests ship a sandbox dataset but deliberately no starter query.
+        sql_schema: category === 'SQL' ? sqlSchema : undefined,
+        difficulty: category === 'SQL' ? difficulty : undefined,
       });
 
       const newChallenge = createRes.data;
@@ -274,46 +296,43 @@ export const Dashboard: React.FC = () => {
               <h3 className="text-xs font-bold text-[#8D9498] uppercase tracking-wider px-3 mb-2">
                 Test Categories
               </h3>
-              <button
-                onClick={() => setCategoryTab('HTML')}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition ${
-                  categoryTab === 'HTML'
-                    ? 'bg-[#D9C8A3] text-[#13191D] shadow-md'
-                    : 'bg-[#232D33] text-[#C9C7C3] hover:text-[#F7F5F2] hover:bg-[#2D3941] border border-[#34414A]'
-                }`}
-              >
-                <div className="flex items-center space-x-2.5">
-                  <FileCode className="w-4 h-4" />
-                  <span>HTML & Visual Tests</span>
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${categoryTab === 'HTML' ? 'bg-[#13191D]/20 text-[#13191D]' : 'bg-[#13191D] text-[#8D9498]'}`}>
-                  {challenges.filter((c) => (c.category || 'HTML') === 'HTML').length}
-                </span>
-              </button>
+              {(Object.keys(CATEGORY_META) as CategoryKey[]).map((key) => {
+                const meta = CATEGORY_META[key];
+                const Icon = meta.icon;
+                const isActive = categoryTab === key;
+                const count = challenges.filter((c) => (c.category || 'HTML') === key).length;
 
-              <button
-                onClick={() => setCategoryTab('JS')}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition ${
-                  categoryTab === 'JS'
-                    ? 'bg-[#D9C8A3] text-[#13191D] shadow-md'
-                    : 'bg-[#232D33] text-[#C9C7C3] hover:text-[#F7F5F2] hover:bg-[#2D3941] border border-[#34414A]'
-                }`}
-              >
-                <div className="flex items-center space-x-2.5">
-                  <Code className="w-4 h-4" />
-                  <span>JavaScript Tests</span>
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${categoryTab === 'JS' ? 'bg-[#13191D]/20 text-[#13191D]' : 'bg-[#13191D] text-[#8D9498]'}`}>
-                  {challenges.filter((c) => c.category === 'JS').length}
-                </span>
-              </button>
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setCategoryTab(key)}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition ${
+                      isActive
+                        ? 'bg-[#D9C8A3] text-[#13191D] shadow-md'
+                        : 'bg-[#232D33] text-[#C9C7C3] hover:text-[#F7F5F2] hover:bg-[#2D3941] border border-[#34414A]'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2.5">
+                      <Icon className="w-4 h-4" />
+                      <span>{meta.label}</span>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-mono ${
+                        isActive ? 'bg-[#13191D]/20 text-[#13191D]' : 'bg-[#13191D] text-[#8D9498]'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </aside>
 
             {/* Test Cards List */}
             <div className="lg:col-span-3 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-[#F7F5F2]">
-                  {categoryTab === 'HTML' ? 'HTML & CSS Visual Layout Tests' : 'JavaScript Method & Logic Tests'}
+                  {CATEGORY_META[categoryTab].heading}
                 </h3>
                 <span className="text-xs text-[#8D9498]">
                   Showing {challenges.filter((c) => (c.category || 'HTML') === categoryTab).length} tests
@@ -326,7 +345,7 @@ export const Dashboard: React.FC = () => {
                 <div className="bg-[#1B2328] border border-dashed border-[#34414A] rounded-2xl p-12 text-center">
                   <ImageIcon className="w-12 h-12 mx-auto text-[#8D9498] mb-3" />
                   <h4 className="text-lg font-medium text-[#F7F5F2] mb-1">
-                    No {categoryTab === 'HTML' ? 'HTML' : 'JavaScript'} tests available
+                    No {categoryTab} tests available
                   </h4>
                   <p className="text-sm text-[#C9C7C3] mb-4">
                     {isAdmin
@@ -389,11 +408,24 @@ export const Dashboard: React.FC = () => {
                             )}
                           </div>
 
-                          <h3 className="text-lg font-bold text-[#F7F5F2] group-hover:text-[#D9C8A3] transition mb-1">
-                            {item.title}
-                          </h3>
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h3 className="text-lg font-bold text-[#F7F5F2] group-hover:text-[#D9C8A3] transition">
+                              {item.title}
+                            </h3>
+                            {item.difficulty && (
+                              <span className="flex-shrink-0 mt-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B89C5E]/15 text-[#D9C8A3] border border-[#D9C8A3]/30">
+                                {item.difficulty}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-[#C9C7C3] line-clamp-2 mb-4">
-                            {item.description || 'No description provided.'}
+                            {/* Briefs are markdown; strip the syntax so the card preview stays readable. */}
+                            {item.description
+                              ? item.description
+                                  .replace(/[*_`#>|]/g, '')
+                                  .replace(/\s+/g, ' ')
+                                  .trim()
+                              : 'No description provided.'}
                           </p>
 
                           {/* Reference Preview or Category Badge */}
@@ -407,8 +439,22 @@ export const Dashboard: React.FC = () => {
                             </div>
                           ) : (
                             <div className="h-32 bg-[#13191D] rounded-lg border border-[#34414A] flex flex-col items-center justify-center text-[#8D9498] text-xs">
-                              {item.category === 'JS' ? <Code className="w-8 h-8 mb-1 text-[#D9C8A3]" /> : <FileCode className="w-8 h-8 mb-1 text-[#D9C8A3]" />}
-                              <span>{item.category === 'JS' ? 'JS Solution Code Test' : 'Visual Mockup Reference'}</span>
+                              {item.category === 'SQL' ? (
+                                <>
+                                  <Database className="w-8 h-8 mb-1 text-[#D9C8A3]" />
+                                  <span>Live SQL Query Sandbox</span>
+                                </>
+                              ) : item.category === 'JS' ? (
+                                <>
+                                  <Code className="w-8 h-8 mb-1 text-[#D9C8A3]" />
+                                  <span>JS Solution Code Test</span>
+                                </>
+                              ) : (
+                                <>
+                                  <FileCode className="w-8 h-8 mb-1 text-[#D9C8A3]" />
+                                  <span>Visual Mockup Reference</span>
+                                </>
+                              )}
                             </div>
                           )}
                         </div>
@@ -451,6 +497,21 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* SQL submissions are answered entirely in the SQL editor — show that first. */}
+              {selectedSubmission.category === 'SQL' && (
+                <div>
+                  <h4 className="text-xs font-semibold text-[#8D9498] uppercase tracking-wider mb-2 flex items-center space-x-2">
+                    <Database className="w-4 h-4 text-[#D9C8A3]" />
+                    <span>Submitted SQL Query</span>
+                  </h4>
+                  <pre className="bg-[#13191D] border border-[#34414A] p-4 rounded-xl text-xs font-mono text-[#D9C8A3] overflow-x-auto whitespace-pre-wrap">
+                    {selectedSubmission.sql_code?.trim() || '-- Candidate submitted an empty query'}
+                  </pre>
+                </div>
+              )}
+
+              {selectedSubmission.category !== 'SQL' && (
+              <>
               <div>
                 <h4 className="text-xs font-semibold text-[#8D9498] uppercase tracking-wider mb-2 flex items-center space-x-2">
                   <Code className="w-4 h-4 text-[#D9C8A3]" />
@@ -480,6 +541,8 @@ export const Dashboard: React.FC = () => {
                   {selectedSubmission.js_code || '// No JS code'}
                 </pre>
               </div>
+              </>
+              )}
             </div>
           </div>
         </div>
@@ -497,33 +560,69 @@ export const Dashboard: React.FC = () => {
                 <label className="block text-xs font-semibold text-[#C9C7C3] uppercase tracking-wider mb-2">
                   Test Category
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setCategory('HTML')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-2 ${
+                    className={`py-2 px-2 rounded-xl border text-[11px] font-bold transition flex items-center justify-center space-x-1.5 ${
                       category === 'HTML'
                         ? 'bg-[#D9C8A3] text-[#13191D] border-[#D9C8A3]'
                         : 'bg-[#232D33] text-[#C9C7C3] border-[#34414A]'
                     }`}
                   >
-                    <FileCode className="w-4 h-4" />
-                    <span>HTML / Visual Test</span>
+                    <FileCode className="w-4 h-4 flex-shrink-0" />
+                    <span>HTML / Visual</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setCategory('JS')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-2 ${
+                    className={`py-2 px-2 rounded-xl border text-[11px] font-bold transition flex items-center justify-center space-x-1.5 ${
                       category === 'JS'
                         ? 'bg-[#D9C8A3] text-[#13191D] border-[#D9C8A3]'
                         : 'bg-[#232D33] text-[#C9C7C3] border-[#34414A]'
                     }`}
                   >
-                    <Code className="w-4 h-4" />
-                    <span>JS Method / Logic Test</span>
+                    <Code className="w-4 h-4 flex-shrink-0" />
+                    <span>JS / Logic</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCategory('SQL')}
+                    className={`py-2 px-2 rounded-xl border text-[11px] font-bold transition flex items-center justify-center space-x-1.5 ${
+                      category === 'SQL'
+                        ? 'bg-[#D9C8A3] text-[#13191D] border-[#D9C8A3]'
+                        : 'bg-[#232D33] text-[#C9C7C3] border-[#34414A]'
+                    }`}
+                  >
+                    <Database className="w-4 h-4 flex-shrink-0" />
+                    <span>SQL / Query</span>
                   </button>
                 </div>
               </div>
+
+              {category === 'SQL' && (
+                <div>
+                  <label className="block text-xs font-semibold text-[#C9C7C3] uppercase tracking-wider mb-2">
+                    Difficulty Level
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {['Beginner', 'Beginner+', 'Intermediate', 'Advanced'].map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => setDifficulty(level)}
+                        className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition ${
+                          difficulty === level
+                            ? 'bg-[#B89C5E]/25 text-[#D9C8A3] border-[#D9C8A3]/50'
+                            : 'bg-[#232D33] text-[#8D9498] border-[#34414A] hover:text-[#C9C7C3]'
+                        }`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-[#C9C7C3] uppercase tracking-wider mb-2">
@@ -551,7 +650,13 @@ export const Dashboard: React.FC = () => {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder={category === 'JS' ? 'e.g. Array Flattening Function' : 'e.g. Hero Section Card'}
+                  placeholder={
+                    category === 'JS'
+                      ? 'e.g. Array Flattening Function'
+                      : category === 'SQL'
+                      ? 'e.g. Top Earners per Department'
+                      : 'e.g. Hero Section Card'
+                  }
                   className="w-full bg-[#232D33] border border-[#34414A] focus:border-[#D9C8A3] rounded-lg px-3 py-2 text-[#F7F5F2] text-sm outline-none"
                 />
               </div>
@@ -561,13 +666,40 @@ export const Dashboard: React.FC = () => {
                   Question Description & Instructions
                 </label>
                 <textarea
-                  rows={3}
+                  rows={category === 'SQL' ? 6 : 3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detailed instructions for candidate on what method to complete..."
+                  placeholder={
+                    category === 'SQL'
+                      ? 'Full question brief — Markdown supported (headings, tables, code blocks). Describe the schema, the task, the exact output columns and the ordering rules.'
+                      : 'Detailed instructions for candidate on what method to complete...'
+                  }
                   className="w-full bg-[#232D33] border border-[#34414A] focus:border-[#D9C8A3] rounded-lg px-3 py-2 text-[#F7F5F2] text-sm outline-none resize-none"
                 />
+                {category === 'SQL' && (
+                  <p className="text-[10px] text-[#8D9498] mt-1">
+                    Rendered as Markdown in the candidate's Question panel.
+                  </p>
+                )}
               </div>
+
+              {category === 'SQL' && (
+                <div>
+                  <label className="block text-xs font-semibold text-[#D9C8A3] uppercase tracking-wider mb-1">
+                    Sandbox Dataset — DDL &amp; Seed Rows
+                  </label>
+                  <textarea
+                    rows={6}
+                    value={sqlSchema}
+                    onChange={(e) => setSqlSchema(e.target.value)}
+                    className="w-full bg-[#13191D] border border-[#34414A] focus:border-[#D9C8A3] rounded-lg px-3 py-2 text-[#B8FF4F] font-mono text-xs outline-none resize-none"
+                  />
+                  <p className="text-[10px] text-[#8D9498] mt-1">
+                    Runs in the candidate's browser to build the database they query. The SQL editor
+                    itself stays empty — candidates write every line of the answer themselves.
+                  </p>
+                </div>
+              )}
 
               {category === 'JS' && (
                 <div>
